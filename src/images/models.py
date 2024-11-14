@@ -3,10 +3,11 @@ from distutils.command.upload import upload
 from django.db import models
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import numpy as np
-from tensorflow.keras.applications.inception_resnet_v2 import InceptionResNetV2, decode_predictions, preprocess_input
-# Create your models here.
+from tensorflow.keras.applications.inception_resnet_v2 import decode_predictions, preprocess_input
 import time
 import os
+import shutil
+from .model_loader import model  # Import the preloaded model
 
 def refresh_directory(directory):
     for filename in os.listdir(directory):
@@ -26,9 +27,8 @@ class Image(models.Model):
     uploaded = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return "Image classfied at {}".format(self.uploaded.strftime('%Y-%m-%d %H:%M'))
+        return "Image classified at {}".format(self.uploaded.strftime('%Y-%m-%d %H:%M'))
 
-            # Add a delay of 10 seconds
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)  # Save the image first
 
@@ -36,15 +36,15 @@ class Image(models.Model):
         time.sleep(5)
 
         try: 
-            # Add a delay of 10 seconds
             print(f"{self.picture.path} , 10 seconds wait over")
             img = load_img(self.picture.path, target_size=(299, 299))
             img_array = img_to_array(img)
             to_pred = np.expand_dims(img_array, axis=0)
             prep = preprocess_input(to_pred)
-            model = InceptionResNetV2(weights='imagenet')
-            predictaion = model.predict(prep)
-            decoded = decode_predictions(predictaion)[0][0][1]
+
+            # Use the preloaded model to predict
+            prediction = model.predict(prep)
+            decoded = decode_predictions(prediction)[0][0][1]
             self.classified = str(decoded)
             print(decoded)
             print('success in process')
@@ -57,5 +57,3 @@ class Image(models.Model):
             template = "An exception of type {0} occurred. Arguments:\n{1!r}"
             message = template.format(type(ex).__name__, ex.args)
             print(message)
-        except:
-            print('classification failed')

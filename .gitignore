@@ -1,0 +1,4 @@
+media_root
+
+__pycache__/
+**/migrations/
